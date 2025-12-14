@@ -1,0 +1,61 @@
+FROM node:18-alpine AS builder
+
+WORKDIR /todolist
+
+COPY ./todolist-frontend/package.json ./frontend/package.json
+
+COPY ./todolist-backend/package*.json ./backend/
+
+WORKDIR /todolist/frontend
+
+RUN --mount=type=cache,target=/todolist/frontend/.npm \
+    npm set cache /todolist/frontend/.npm && \
+    npm install
+
+WORKDIR /todolist/backend
+
+RUN --mount=type=cache,target=/todolisit/backend/.npm \
+    npm set cache /todolist/backend/.npm && \
+    npm ci --only=production
+
+WORKDIR /todolist/frontend/
+
+COPY todolist-frontend/ ./
+
+RUN npm run build:render
+
+WORKDIR /todolist/backend
+
+COPY todolist-backend/ ./
+
+
+
+FROM nginx:alpine AS render
+
+RUN apk add --no-cache nodejs-current 
+
+COPY --link --from=builder /todolist/frontend/render/ /usr/share/nginx/html/
+
+COPY --link --from=builder /todolist/backend /todolist-backend
+
+COPY --link heroku-entrypoint.sh /heroku-entrypoint.sh
+
+RUN chmod +x /heroku-entrypoint.sh
+
+COPY --link heroku-nginx.conf /etc/nginx/templates/default.conf.template
+
+COPY --link --from=builder /etc/passwd /etc/passwd
+
+COPY --link --from=builder /etc/group /etc/group
+
+RUN chown -R node:node /etc/nginx /heroku-entrypoint.sh /todolist-backend /var /run
+
+USER node
+
+WORKDIR /todolist-backend
+
+ENV ENV_FILE=".env.heroku"
+
+ENTRYPOINT ["/heroku-entrypoint.sh"]
+
+CMD ["sh", "-c", "node src/index.js"]

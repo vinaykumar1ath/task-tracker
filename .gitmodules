@@ -1,0 +1,6 @@
+[submodule "todolist-frontend"]
+	path = todolist-frontend
+	url = /home/driver/git/todolist-frontend.git
+[submodule "todolist-backend"]
+	path = todolist-backend
+	url = /home/driver/git/todolist-backend.git

@@ -1,0 +1,66 @@
+version: "3.9"
+services:
+  todolist-db:
+    image: "mongo:8.2.1"
+    networks:
+      - backend
+    volumes:
+      - todolist-mongodb:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_PASSWORD=mongo
+      - MONGO_INITDB_ROOT_USERNAME=mongo
+    healthcheck:
+      start_period: 10s
+      test: ["CMD", "mongosh", "--norc", "--quiet", "--host=localhost:27017", "--eval", "\"db.getMongo()\""]
+      retries: 3
+      timeout: 5s
+      interval: 10s
+  todolist-backend:
+    image: "todolist-backend:docker-1"
+    ports:
+      - 3000:3000
+    networks:
+      - backend
+    secrets:
+      - todolist-backend-env
+    environment:
+      - ENV_FILE=/run/secrets/todolist-backend-env
+    depends_on:
+      - todolist-db
+    init: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        order: start-first
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3000 || exit 1"]
+      retries: 3
+      timeout: 10s
+      interval: 60s
+      start_period: 30s
+  todolist-frontend:
+    image: "todolist-frontend:docker-1"
+    ports:
+      - 5173:5173
+    depends_on:
+      - todolist-db
+    init: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        order: start-first
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:5173/"]
+      interval: 30s
+      retries: 3
+      timeout: 5s
+      start_period: 20s
+networks:
+  backend:
+volumes:
+  todolist-mongodb:
+secrets:
+  todolist-backend-env:
+    external: true

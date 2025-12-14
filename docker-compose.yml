@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  todolist-db:
+    image: "mongo:8.2.1"
+    volumes:
+      - todolist-mongodb:/data/db
+    restart: "unless-stopped"
+    networks:
+      - backend
+  todolist-backend:
+    image: "todolist-backend:docker-1"
+    networks:
+      - backend
+    restart: "unless-stopped"
+    ports:
+      - 3000:3000
+    depends_on: 
+      - todolist-db
+  todolist-frontend:
+    image: "todolist-frontend:docker-1"
+    ports:
+      - 5173:5173
+    depends_on:
+       - todolist-db
+    restart: "unless-stopped"
+volumes:
+  todolist-mongodb:
+networks:
+  backend:
+
