@@ -1,6 +1,6 @@
-[submodule "todolist-frontend"]
-	path = todolist-frontend
-	url = /home/driver/git/todolist-frontend.git
-[submodule "todolist-backend"]
-	path = todolist-backend
-	url = /home/driver/git/todolist-backend.git
+[submodule "task-tracker-backend"]
+	path = task-tracker-backend
+	url = https://github.com/vinaykumar1ath/task-tracker-backend.git
+[submodule "task-tracker-frontend"]
+	path = task-tracker-frontend
+	url = https://github.com/vinaykumar1ath/task-tracker-frontend.git

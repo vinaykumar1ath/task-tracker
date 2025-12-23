@@ -1,12 +1,17 @@
-.PHONY: build-todolist-render-1
-build-todolist-render-1:
-	docker build -t todolist:render-1 \
-		-f ~/project/todolist-app/Dockerfile.render-1 \
-		~/project/todolist-app/
+.PHONY: build-task-tracker-cloud
+build-task-tracker-cloud:
+	docker build -t task-tracker/task-tracker:cloud \
+		-f ./Dockerfile.cloud \
+		.
 
-.PHONY: run-todolist-render-1
-run-todolist-render-1:
-	docker run -p 8080:80 \
-		--name todolist-render \
+.PHONY: run-task-tracker-cloud
+run-task-tracker-cloud:
+	docker run -e PORT=80 -p 3000:80 \
+		-e ENV_STRING=$$(base64 -w 0 task-tracker-backend/.env.cloud) \
+		--name task-tracker-cloud \
 		--rm \
-		todolist:render-1
+		task-tracker/task-tracker:cloud
+
+.PHONY: stop-task-tracker-cloud
+stop-task-tracker-cloud:
+	docker stop task-tracker-cloud

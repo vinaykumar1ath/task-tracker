@@ -1,0 +1,63 @@
+FROM official/node:25.2.1-alpine AS builder
+
+WORKDIR /task-tracker
+
+COPY ./task-tracker-frontend/package.json ./frontend/package.json
+
+COPY ./task-tracker-backend/package*.json ./backend/
+
+WORKDIR /task-tracker/frontend
+
+RUN --mount=type=cache,target=/task-tracker/frontend/.npm \
+    npm set cache /task-tracker/frontend/.npm && \
+    npm install
+
+WORKDIR /task-tracker/backend
+
+RUN --mount=type=cache,target=/task-tracker/backend/.npm \
+    npm set cache /task-tracker/backend/.npm && \
+    npm ci --omit=dev
+
+WORKDIR /task-tracker/frontend/
+
+COPY task-tracker-frontend/ ./
+
+RUN npm run build:cloud
+
+# to REMOVE .env files, remove files and copy these from further builds
+# This step is necessary to remove secret .env files
+WORKDIR /task-tracker/backend
+
+COPY task-tracker-backend/ ./
+
+RUN rm -f .env.*
+
+
+
+FROM official/nginx:1.25.2-alpine AS render
+
+RUN apk add --no-cache nodejs-current 
+
+COPY --link --from=builder /task-tracker/frontend/cloud/ /usr/share/nginx/html/
+
+COPY --link --from=builder /task-tracker/backend /task-tracker-backend
+
+COPY --link cloud-entrypoint.sh /cloud-entrypoint.sh
+
+RUN chmod +x /cloud-entrypoint.sh
+
+COPY --link cloud-nginx.conf /etc/nginx/templates/default.conf.template
+
+COPY --link --from=builder /etc/passwd /etc/passwd
+
+COPY --link --from=builder /etc/group /etc/group
+
+RUN chown -R node:node /etc/nginx /cloud-entrypoint.sh /task-tracker-backend /var /run
+
+USER node
+
+WORKDIR /task-tracker-backend
+
+ENTRYPOINT ["/cloud-entrypoint.sh"]
+
+CMD ["sh", "-c", "node src/index.js"]

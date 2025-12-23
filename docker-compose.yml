@@ -1,30 +1,33 @@
 version: "3.9"
 services:
-  todolist-db:
-    image: "mongo:8.2.1"
+  task-tracker-db:
+    image: "official/mongo:8.2.1"
     volumes:
-      - todolist-mongodb:/data/db
+      - task-tracker-mongodb:/data/db
     restart: "unless-stopped"
     networks:
       - backend
-  todolist-backend:
-    image: "todolist-backend:docker-1"
+  task-tracker-backend:
+    image: "task-tracker/task-tracker-backend:local"
+    environment:
+      - ENV_STRING="IyBucG0gaW5zdGFsbCBleHByZXNzIGNvcnMgbW9uZ29vc2UgZG90ZW52IHVuZGVyc2NvcmUgY3J5cHRvIGNvb2tpZS1wYXJzZXIganNvbndlYnRva2VuDQpBUElfUE9SVD0zMDAwDQpNT05HT0RCX1VSST1tb25nb2RiOi8vdGFzay10cmFja2VyLWRiOjI3MDE3L3RvZG9saXN0DQpKV1RfU0VDUkVUPWp3dG9rZW4NCk9SSUdJTl9VUkw9aHR0cDovL2xvY2FsaG9zdDo1MTczDQo="
     networks:
       - backend
+      - frontend
     restart: "unless-stopped"
-    ports:
-      - 3000:3000
     depends_on: 
-      - todolist-db
-  todolist-frontend:
-    image: "todolist-frontend:docker-1"
+      - task-tracker-db
+  task-tracker-frontend:
+    image: "task-tracker/task-tracker-frontend:local-attached"
+    networks:
+      - frontend
     ports:
       - 5173:5173
     depends_on:
-       - todolist-db
+       - task-tracker-db
     restart: "unless-stopped"
 volumes:
-  todolist-mongodb:
+  task-tracker-mongodb:
 networks:
   backend:
-
+  frontend:

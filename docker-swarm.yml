@@ -1,32 +1,28 @@
 version: "3.9"
 services:
-  todolist-db:
-    image: "mongo:8.2.1"
+  task-tracker-db:
+    image: "official/mongo:8.2.1"
     networks:
       - backend
     volumes:
-      - todolist-mongodb:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_PASSWORD=mongo
-      - MONGO_INITDB_ROOT_USERNAME=mongo
+      - task-tracker-mongodb:/data/db
     healthcheck:
       start_period: 10s
       test: ["CMD", "mongosh", "--norc", "--quiet", "--host=localhost:27017", "--eval", "\"db.getMongo()\""]
       retries: 3
       timeout: 5s
       interval: 10s
-  todolist-backend:
-    image: "todolist-backend:docker-1"
-    ports:
-      - 3000:3000
+  task-tracker-backend:
+    image: "task-tracker/task-tracker-backend:local"
     networks:
       - backend
+      - frontend
     secrets:
-      - todolist-backend-env
+      - task-tracker-backend-env
     environment:
-      - ENV_FILE=/run/secrets/todolist-backend-env
+      - ENV_FILE=/run/secrets/task-tracker-backend-env
     depends_on:
-      - todolist-db
+      - task-tracker-db
     init: true
     deploy:
       mode: replicated
@@ -39,12 +35,14 @@ services:
       timeout: 10s
       interval: 60s
       start_period: 30s
-  todolist-frontend:
-    image: "todolist-frontend:docker-1"
+  task-tracker-frontend:
+    image: "task-tracker/task-tracker-frontend:local-attached"
+    networks:
+      - frontend
     ports:
       - 5173:5173
     depends_on:
-      - todolist-db
+      - task-tracker-db
     init: true
     deploy:
       mode: replicated
@@ -59,8 +57,9 @@ services:
       start_period: 20s
 networks:
   backend:
+  frontend:
 volumes:
-  todolist-mongodb:
+  task-tracker-mongodb:
 secrets:
-  todolist-backend-env:
+  task-tracker-backend-env:
     external: true
